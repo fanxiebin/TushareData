@@ -3,11 +3,10 @@ from src_ts.TS_Downloader_status import download_stock_list
 from src_ts.TS_Extract_data import extract_data
 from tools.db import connect, backup_database
 from conf_ts.logger_config import get_logger
-from conf_ts.dirs_config import dirs, init_dirs, db_file
+from conf_ts.dirs_config import dirs, db_file
 from conf_ts.download_config import dates_data, dates_namechange, list_data
 
 logger = get_logger(__name__)
-init_dirs()
 
 #%% --- 备份数据库（需在建立连接前完成文件拷贝） ---
 logger.info("开始备份数据库...")

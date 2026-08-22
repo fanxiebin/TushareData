@@ -84,23 +84,19 @@ def connect(db_path: Path) -> duckdb.DuckDBPyConnection:
     """ 连接数据库文件并确保库表结构存在 """
     db_path.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(db_path))
-    init_schema(con)
-    return con
-
-
-def init_schema(con: duckdb.DuckDBPyConnection) -> None:
     for ddl in TABLE_DDL:
         con.execute(ddl)
+    return con
 
 
 @beartype
 def backup_database(db_path: Path, backup_dir: Path) -> None:
-    """ 备份数据库文件到带时间戳的目录。需在连接建立前调用，避免Windows文件占用 """
+    """ 备份数据库文件到带时间戳的备份文件。需在连接建立前调用，避免Windows文件占用 """
+    backup_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    full_backup_dir = backup_dir / f'data_backup_{timestamp}'
-    full_backup_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(db_path, full_backup_dir / db_path.name)
-    logger.success(f'数据库备份成功: {full_backup_dir / db_path.name}')
+    backup_file = backup_dir / f'{db_path.stem}_{timestamp}.duckdb'
+    shutil.copy2(db_path, backup_file)
+    logger.success(f'数据库备份成功: {backup_file}')
 
 
 @beartype

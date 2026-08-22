@@ -8,17 +8,12 @@ def get_namechange_start_date() -> str:
     """
     从数据库下载状态表读取 namechange 最新完成日期作为增量更新起点。
     """
-    default_start = '20140101'  # 默认起始日期，数据库文件不存在时使用（首次初始化场景）
     if not db_file.exists():
-        return default_start
+        return '20140101'  # 默认起始日期，数据库文件不存在时使用（首次初始化场景）
     con = duckdb.connect(str(db_file), read_only=True)
-    try:
-        completed_dates = get_completed_dates(con, 'namechange')
-    finally:
-        con.close()
-    if not completed_dates:
-        return default_start
-    return max(completed_dates)
+    completed_dates = get_completed_dates(con, 'namechange')
+    con.close()
+    return max(completed_dates) if completed_dates else '20140101'
 
 #* 数据下载参数
 # 数据下载日期配置
