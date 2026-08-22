@@ -20,25 +20,25 @@ DatasetName = Annotated[str, Is[lambda value: value in DATA_CONFIGS]]
 
 
 @beartype
-def download_and_save_data(con: duckdb.DuckDBPyConnection, item: DatasetName, download_dates: list[YmdDate]) -> None:
+def download_and_save_data(con: duckdb.DuckDBPyConnection, dataset: DatasetName, download_dates: list[YmdDate]) -> None:
     """
     下载指定日期列表的数据并直接入库（数据与下载状态在同一事务中提交）
 
     参数:
         con: DuckDB连接
-        item: str, 数据类型
+        dataset: str, 数据类型
         download_dates: list[str], 需要下载的日期列表
     """
-    logger.info(f'下载{item}数据，共{len(download_dates)}个交易日，从{download_dates[0]}到{download_dates[-1]}')
+    logger.info(f'下载{dataset}数据，共{len(download_dates)}个交易日，从{download_dates[0]}到{download_dates[-1]}')
 
     data_downloaded = [] # 使用列表存储各日期的数据
     status_rows: list[tuple[str, str, int, str]] = [] # (logical_date, status, row_count, message)
 
     # 下载数据(按日期循环下载，解决单次下载数据不超过6000条的限制）
-    for date in tqdm(download_dates, desc=f'下载{item}数据...'):
+    for date in tqdm(download_dates, desc=f'下载{dataset}数据...'):
         try:
-            #! 核心下载逻辑：按item配置调用Tushare接口
-            cur_data = DATA_CONFIGS[item]['download_func'](pro, date, DATA_CONFIGS[item]['fields'])
+            #! 核心下载逻辑：按dataset配置调用Tushare接口
+            cur_data = DATA_CONFIGS[dataset]['download_func'](pro, date, DATA_CONFIGS[dataset]['fields'])
             logger.debug(f'    成功下载数据: {date}，共{len(cur_data)}条记录')
             if not cur_data.empty:
                 # 将当前日期的数据添加到下载列表中，并记录下载成功状态信息
@@ -61,30 +61,30 @@ def download_and_save_data(con: duckdb.DuckDBPyConnection, item: DatasetName, do
         for col in [c for c in data_combined.columns if c.endswith('date')]:
             data_combined[col] = pd.to_datetime(data_combined[col], format='%Y%m%d').dt.date
 
-        table = DATA_CONFIGS[item]['table']
-        columns = ', '.join(DATA_CONFIGS[item]['fields'])
+        table = DATA_CONFIGS[dataset]['table']
+        columns = ', '.join(DATA_CONFIGS[dataset]['fields'])
         con.register('new_data', data_combined)
         # 主键约束在写入时去重，重复数据保留最后一次
         con.execute(f'INSERT OR REPLACE INTO {table} ({columns}) SELECT {columns} FROM new_data')
-        logger.success(f'{item}数据入库完成: 表{table}，共{len(data_combined)}条记录')
+        logger.success(f'{dataset}数据入库完成: 表{table}，共{len(data_combined)}条记录')
     else:
-        logger.warning(f'{item}本次下载无新数据入库')
+        logger.warning(f'{dataset}本次下载无新数据入库')
 
     updated_at = datetime.now()
     con.executemany(
         'INSERT OR REPLACE INTO download_status VALUES (?, ?, ?, ?, ?, ?)',
-        [(item, date, status, row_count, message, updated_at) for date, status, row_count, message in status_rows],
+        [(dataset, date, status, row_count, message, updated_at) for date, status, row_count, message in status_rows],
     )
     con.execute('COMMIT')
 
 @beartype
-def download_data(con: duckdb.DuckDBPyConnection, list_download: list[DatasetName], dates: dict[str, YmdDate]) -> None:
+def download_data(con: duckdb.DuckDBPyConnection, datasets: list[DatasetName], dates: dict[str, YmdDate]) -> None:
     """
     下载指定类型的数据并保存到数据库
 
     参数:
         con: DuckDB连接
-        list_download: list, 要下载的数据类型列表
+        datasets: list, 要下载的数据类型列表
         dates: dict, 包含开始日期和结束日期
     """
     # 候选日期一次性构造：交易日（is_open='1'只返回交易日且按cal_date升序）；namechange可能在非交易日发布，需全部自然日
@@ -98,12 +98,12 @@ def download_data(con: duckdb.DuckDBPyConnection, list_download: list[DatasetNam
         freq="D",
     ).strftime("%Y%m%d").tolist()
 
-    for item in list_download:
-        candidates = trading_dates if DATA_CONFIGS[item]['use_trading_calendar'] else natural_dates
-        download_dates = [d for d in candidates if d not in get_completed_dates(con, item)] # 数据量小，循环不影响效率。
+    for dataset in datasets:
+        candidates = trading_dates if DATA_CONFIGS[dataset]['use_trading_calendar'] else natural_dates
+        download_dates = [d for d in candidates if d not in get_completed_dates(con, dataset)] # 数据量小，循环不影响效率。
 
         if not download_dates:
-            logger.info(f'{item}没有待下载日期，跳过')
+            logger.info(f'{dataset}没有待下载日期，跳过')
         else:
-            logger.info(f'{item}发现{len(download_dates)}个缺失日期需要下载')
-            download_and_save_data(con, item, download_dates) # 下载数据
+            logger.info(f'{dataset}发现{len(download_dates)}个缺失日期需要下载')
+            download_and_save_data(con, dataset, download_dates) # 下载数据
