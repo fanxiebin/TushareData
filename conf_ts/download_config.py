@@ -45,12 +45,10 @@ list_data = [
 # 状态数据：仅'namechange'一种，update_main.py中硬编码处理，无需配置列表
 
 #* --- 数据透视配置（供 TS_Extract_data 使用） ---
-#1、Extract_data参数
-list_load_raw = ['adj_factor', 'daily', 'daily_basic', 'stk_limit'] # 原始数据文件名列表
-
-#2、提取历史状态和涨跌停状态参数
-constant_price = ['close', 'open', 'high', 'low'] # 常量价格数据（复权和比较股票涨跌停状态）
-constant_aux = ['adj_factor', 'up_limit', 'down_limit'] # 常量辅助数据（复权和比较股票涨跌停状态使用）
+# 常量价格数据（复权和比较股票涨跌停状态）
+constant_price = ['close', 'open', 'high', 'low']
+# 常量辅助数据（复权和比较股票涨跌停状态使用）
+constant_aux = ['adj_factor', 'up_limit', 'down_limit']
 
 # 需要透视的字段列表（自动生成），为处理目标字段和需要的辅助数据
 list_process = ['amount', 'circ_mv', 'close', 'turnover_rate_f']
