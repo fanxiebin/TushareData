@@ -44,35 +44,6 @@ def save_status_table(status_file: Path, table: pd.DataFrame) -> None:
 
 
 @beartype
-def normalize_status_table(status_file: Path) -> None:
-    save_status_table(status_file, load_status_table(status_file))
-
-
-@beartype
-def upsert_status_entry(
-    status_file: Path,
-    logical_date: str,
-    status: str,
-    row_count: int,
-    message: str = '',
-) -> None:
-    table = load_status_table(status_file)
-    row = pd.DataFrame([
-        {
-            'logical_date': logical_date,
-            'status': status,
-            'row_count': str(row_count),
-            'updated_at': datetime.now().strftime('%Y%m%d_%H%M%S'),
-            'message': message,
-        }
-    ])
-    mask = table['logical_date'] == logical_date
-    table = table.loc[~mask]
-    table = pd.concat([table, row], ignore_index=True)
-    save_status_table(status_file, table)
-
-
-@beartype
 def upsert_status_entries(status_file: Path, rows: list[dict[str, str | int]]) -> None:
     if not rows:
         return

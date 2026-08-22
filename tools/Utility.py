@@ -47,8 +47,8 @@ def optimize_dtypes(df: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
 
     优化策略：
     - float64 -> float32（减少内存到一半）
-    - int64 -> int32（如只有正数则用uint32）
     - 日期列自动检测并转换为datetime64
+    - object -> string，重复率高时进一步转换为分类数组
     """
     # 将双精度数据转换为单精度
     memory_before = int(df.memory_usage(deep=True).sum())
@@ -63,7 +63,7 @@ def optimize_dtypes(df: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
         if df[col].dtype != 'datetime64[ns]':
             df[col] = pd.to_datetime(df[col])
 
-    # 将对象数据转换为字符串，并在重复率大于3的情况下进一步转换为分类数组
+    # 将object数据转换为字符串，并在重复率较高的情况下进一步转换为分类数组
     object_cols = df.select_dtypes(include=['object']).columns
     for col in object_cols:
         df[col] = df[col].astype('string')
