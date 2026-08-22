@@ -1,4 +1,4 @@
-from pathlib import Path
+import duckdb
 import pandas as pd
 from conf_ts.TS_API_config import pro
 from conf_ts.logger_config import get_logger
@@ -6,8 +6,8 @@ from conf_ts.logger_config import get_logger
 # 获取logger
 logger = get_logger(__name__)
 
-def download_stock_list(output_dir: Path) -> None:
-    """ 循环下载不同上市状态的股票基本信息，并拼接保存到指定目录。 """
+def download_stock_list(con: duckdb.DuckDBPyConnection) -> None:
+    """ 循环下载不同上市状态的股票基本信息，后处理后整表更新stock_list表。 """
     # 定义所有上市状态（L 为上市，D 为退市，P 为暂停上市）
     list_statuses = ['L', 'D', 'P']
 
@@ -49,16 +49,16 @@ def download_stock_list(output_dir: Path) -> None:
         combined_data['list_status'] = combined_data['list_status'].str.replace('d', 'D')  # type: ignore
         # 后处理：按ts_code排序
         combined_data = combined_data.sort_values('ts_code').reset_index(drop=True)  # type: ignore
-        # 后处理：转换日期格式
-        combined_data['list_date'] = pd.to_datetime(combined_data['list_date'], format='%Y%m%d')
-        combined_data['delist_date'] = pd.to_datetime(combined_data['delist_date'], format='%Y%m%d')
+        # 后处理：转换日期格式（'YYYYMMDD'字符串转date对象，空值保持NaT入库为NULL）
+        combined_data['list_date'] = pd.to_datetime(combined_data['list_date'], format='%Y%m%d').dt.date
+        combined_data['delist_date'] = pd.to_datetime(combined_data['delist_date'], format='%Y%m%d').dt.date
 
-        stock_list_dir = output_dir / 'stock_list'
-        stock_list_dir.mkdir(parents=True, exist_ok=True)
-        output_path = stock_list_dir / 'current.parquet'
-        combined_data.to_parquet(output_path, index=False)
-
-        logger.success(f"完整股票清单已保存到: {output_path}")
+        # 整表替换（stock_list无主键，直接清空后插入）
+        columns = ', '.join(combined_data.columns)
+        con.register('stock_df', combined_data)
+        con.execute('DELETE FROM stock_list')
+        con.execute(f'INSERT INTO stock_list ({columns}) SELECT {columns} FROM stock_df')
+        logger.success(f"完整股票清单已更新到stock_list表: {len(combined_data)}条")
 
         # 显示各状态统计信息
         status_counts = combined_data['list_status'].value_counts()

@@ -4,11 +4,14 @@ from pathlib import Path
 
 dir_root = Path('C:/Users/neilf/Documents/GitHub/TushareData')
 
+# DuckDB数据库文件路径（单独定义，避免init_dirs将其作为目录创建）
+db_file = dir_root / 'data/tushare.duckdb'
+
 dirs = {
     'root': dir_root,
     'data': dir_root / 'data',
-    'raw_data': dir_root / 'data/0_raw_data',
-    'raw_status': dir_root / 'data/0_raw_status',
+    'raw_data': dir_root / 'data/0_raw_data',     # 迁移过渡期保留，供旧提取层使用
+    'raw_status': dir_root / 'data/0_raw_status', # 迁移过渡期保留，供旧提取层使用
     'extr_data': dir_root / 'data/1_extracted_data',
     'backup': dir_root / 'data/SS',
 }

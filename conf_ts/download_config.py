@@ -1,13 +1,21 @@
 """ TushareData 数据下载配置文件 """
-from conf_ts.dirs_config import dirs
-from tools.download_status import STATUS_FILE_NAME, get_completed_dates
+import duckdb
+
+from conf_ts.dirs_config import db_file
+from tools.db import get_completed_dates
 
 def get_namechange_start_date() -> str:
     """
-    从下载状态表读取 namechange 最新完成日期作为增量更新起点。
+    从数据库下载状态表读取 namechange 最新完成日期作为增量更新起点。
     """
-    default_start = '20140101'  # 默认起始日期，文件不存在时使用
-    completed_dates = get_completed_dates(dirs['raw_status'] / 'namechange' / STATUS_FILE_NAME)
+    default_start = '20140101'  # 默认起始日期，数据库文件不存在时使用（首次初始化场景）
+    if not db_file.exists():
+        return default_start
+    con = duckdb.connect(str(db_file), read_only=True)
+    try:
+        completed_dates = get_completed_dates(con, 'namechange')
+    finally:
+        con.close()
     if not completed_dates:
         return default_start
     return max(completed_dates)
