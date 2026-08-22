@@ -25,9 +25,9 @@ try:
     download_data(con, ['namechange'], dates_namechange)
 
     #%% --- 数据提取 ---
-    #* 一、获取原始股票数据，进行对齐和透视，并保存到extracted_data目录
+    #* 一、以daily为基准对齐各数据集，透视为宽表并保存到extracted_data目录
     logger.info("开始提取和透视原始股票数据...")
-    extract_data(dirs)
+    extract_data(con, dirs['extr_data'])
 finally:
     con.close()
 
