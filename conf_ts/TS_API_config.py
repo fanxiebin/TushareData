@@ -1,9 +1,8 @@
 """ Tushare 数据下载配置常量 """
 import tushare as ts
 
-# 下载key
+# 下载key（默认使用官方端点 api.tushare.pro；原自定义端点***REMOVED***已随旧token失效）
 pro = ts.pro_api('***REMOVED***')
-pro._DataApi__http_url = "http://***REMOVED***:8010/" # type: ignore
 
 # 下载函数接口。table为数据入库的目标表名（主键约束见tools/db.py的DDL）
 DATA_CONFIGS = {
