@@ -9,5 +9,7 @@ db_path = dir_root / 'data/tushare.duckdb'
 
 dirs = {
     'extr_data': dir_root / 'data/1_extracted_data',
+    'extr_status': dir_root / 'data/1_extracted_status',
+    'processed': dir_root / 'data/2_processed',
     'backup': dir_root / 'data/SS',
 }
