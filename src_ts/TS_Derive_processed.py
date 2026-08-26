@@ -27,7 +27,8 @@ def derive_processed(con: duckdb.DuckDBPyConnection, processed_dir: Path) -> Non
     list_adjust = set(constant_price) & set(list_process)  # 需要复权的价格类字段
     for column in tqdm(sorted(list_process), desc='复权填充进度...'):
         if column in list_adjust:
-            # 前复权并先行取整（与旧pandas在复权步round(2)一致），last_adj为该股最后一个非空因子
+            # 前复权并先行取整（与旧pandas在复权步round(2)一致），last_adj为该股最后一个非空因子。
+            # DuckDB ROUND为半进位且走DOUBLE，与numpy的f32缩放路径在半way值/大数值上存在最小位级差异（已确认接受）
             value_expr = (
                 f'CAST(ROUND(g.{column} * CAST(g.adj_factor / la.last_adj AS FLOAT), 2) AS FLOAT)'
             )
