@@ -1,6 +1,8 @@
 from src_ts.TS_Downloader_data import download_data
 from src_ts.TS_Downloader_status import download_stock_list
 from src_ts.TS_Extract_data import extract_data
+from src_ts.TS_Derive_status import derive_status
+from src_ts.TS_Derive_processed import derive_processed
 from tools.db import connect, backup_database
 from conf_ts.logger_config import get_logger
 from conf_ts.dirs_config import dirs, db_path
@@ -27,6 +29,15 @@ try:
     #* 一、以daily为基准对齐各数据集，透视为宽表并保存到extracted_data目录
     logger.info("开始提取和透视原始股票数据...")
     extract_data(con, dirs['extr_data'])
+
+    #%% --- 数据衍生 ---
+    #* 二、生成ST/涨跌停/市值分层状态宽表与状态码表（原PyQI侧TS_Extract_status迁移至此）
+    logger.info("开始衍生状态数据...")
+    derive_status(con, dirs['extr_status'])
+
+    #* 三、价格前复权与停牌填充，产出下游直接可用的数据（原PyQI侧TS_Processer_data迁移至此）
+    logger.info("开始衍生处理后的数据...")
+    derive_processed(con, dirs['processed'])
 finally:
     con.close()
 
