@@ -4,7 +4,8 @@
 - ST状态：上市日/更名公告日/退市日构成事件流，ASOF JOIN取各交易日最近事件（退市优先于更名），
   收盘价<1元的非退市覆盖为*ST
 - 涨跌停：收盘/开盘/最低(高)价与涨跌停价的比较经CASE优先级树判定，LAG判定次日打开
-- 市值分层：流通市值逐日横截面分位数，复刻pandas rank(pct=True)的平均秩/计数语义
+- 市值分层：流通市值逐日横截面分位数（PERCENT_RANK原生窗口），与旧pandas rank/count口径
+  仅在贴阈值约±1/n的极窄带内可能有每日1~2只股票的档位差，属已接受的迁移偏差
 """
 
 from pathlib import Path
@@ -117,13 +118,12 @@ FROM (
 );
 """
 
-# 市值分层：平均秩/非空计数复刻pandas rank(pct=True, axis=1)语义
+# 市值分层：PERCENT_RANK原生窗口（分母为n-1，与旧pandas rank/n口径的差异仅在阈值窄带内，
+# 每日约1~2只贴边股票降一档，已接受；浮点市值不会并列，平局语义差异无影响）
 _CAP_VIEWS_SQL = f"""
 CREATE OR REPLACE TEMP VIEW cap_rank AS
 SELECT trade_date, ts_code,
-       (RANK() OVER (PARTITION BY trade_date ORDER BY circ_mv)
-        + (COUNT(*) OVER (PARTITION BY trade_date, circ_mv) - 1) / 2.0)
-       / COUNT(*) OVER (PARTITION BY trade_date) AS pct
+       PERCENT_RANK() OVER (PARTITION BY trade_date ORDER BY circ_mv) AS pct
 FROM grid
 WHERE circ_mv IS NOT NULL;
 
