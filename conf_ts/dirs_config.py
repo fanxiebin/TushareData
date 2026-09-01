@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-dir_root = Path('C:/Users/neilf/Documents/GitHub/TushareData')
+# 仓库根目录 = conf_ts/ 的上一级（相对定位，克隆到任意路径均可运行）
+dir_root = Path(__file__).resolve().parent.parent
 
 # DuckDB数据库文件路径
 db_path = dir_root / 'data/tushare.duckdb'

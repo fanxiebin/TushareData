@@ -17,7 +17,7 @@ def get_namechange_start_date() -> str:
 
 #* 数据下载参数
 # 数据下载日期配置
-dates_data = {'start': '20170101', 'end': '20260331'}
+dates_data = {'start': '20170101', 'end': '20260430'}
 
 # 股票更名数据的日期配置（基于dates_data，但开始时间调整为更近期）
 # 原则上，为保证更名期间覆盖数据期间，需扩大dates_namechange的下载时间段

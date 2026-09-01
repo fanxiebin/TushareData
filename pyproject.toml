@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TushareData"
+version = "0.3.0"
+description = "Tushare data downloading and extraction service (DuckDB-backed)"
+requires-python = ">=3.10"
+dependencies = [
+    "beartype>=0.19",
+    "duckdb>=1.0",
+    "ipykernel==6.31.0",
+    "loguru>=0.7",
+    "pandas>=2.2",
+    "tqdm>=4.66",
+    "tushare>=1.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["conf_ts*", "src_ts*"]

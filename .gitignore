@@ -163,8 +163,8 @@ logs/
 conf_ts/token.local
 
 # Ignore project configuration files, which apply to all branches
-pyproject.toml
 .github
 .claude
 CLAUDE.md
 *.bak
+Run_TushareData.bat

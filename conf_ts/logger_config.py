@@ -4,11 +4,12 @@ TushareData 统一日志配置模块
 """
 
 import sys
-from pathlib import Path
 from loguru import logger
 
-# 直接定义logs目录路径
-logs_dir = Path('C:/Users/neilf/Documents/GitHub/TushareData/logs')
+from conf_ts.dirs_config import dir_root
+
+# logs目录挂在工作区根目录下
+logs_dir = dir_root / 'logs'
 
 # 确保logs目录存在
 logs_dir.mkdir(exist_ok=True)
