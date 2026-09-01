@@ -1,8 +1,13 @@
 """ Tushare 数据下载配置常量 """
+from pathlib import Path
+
 import tushare as ts
 
-# 下载key（默认官方端点 api.tushare.pro）
-pro = ts.pro_api('***REMOVED***')
+# 下载key：从 conf_ts/token.local 读取（该文件已 gitignore，不入库；内容为一行纯文本 token）
+_token_file = Path(__file__).with_name('token.local')
+if not _token_file.exists():
+    raise FileNotFoundError('缺少 conf_ts/token.local——请创建该文件并填入你的 tushare token（一行纯文本）')
+pro = ts.pro_api(_token_file.read_text(encoding='utf-8').strip())
 
 # 下载函数接口。table为数据入库的目标表名（主键约束见tools/db.py的DDL）
 DATA_CONFIGS = {

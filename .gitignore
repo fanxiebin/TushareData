@@ -159,6 +159,9 @@ cython_debug/
 data/
 logs/
 
+# Tushare token（本地私密文件，绝不入库）
+conf_ts/token.local
+
 # Ignore project configuration files, which apply to all branches
 pyproject.toml
 .github
