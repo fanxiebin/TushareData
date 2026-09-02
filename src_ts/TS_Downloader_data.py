@@ -9,7 +9,7 @@ from tqdm import tqdm
 from typing import Annotated
 from conf_ts.TS_API_config import DATA_CONFIGS, pro
 from conf_ts.logger_config import get_logger
-from tools.db import get_completed_dates
+from src_ts.db import get_completed_dates
 
 # 获取logger
 logger = get_logger(__name__)

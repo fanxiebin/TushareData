@@ -9,7 +9,7 @@ if not _token_file.exists():
     raise FileNotFoundError('缺少 conf_ts/token.local——请创建该文件并填入你的 tushare token（一行纯文本）')
 pro = ts.pro_api(_token_file.read_text(encoding='utf-8').strip())
 
-# 下载函数接口。table为数据入库的目标表名（主键约束见tools/db.py的DDL）
+# 下载函数接口。table为数据入库的目标表名（主键约束见src_ts/db.py的DDL）
 DATA_CONFIGS = {
     'daily': {
         'fields': ["ts_code", "trade_date", "open", "high", "low", "close", "pct_chg", "amount"],

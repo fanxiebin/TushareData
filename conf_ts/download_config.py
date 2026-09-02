@@ -2,7 +2,7 @@
 import duckdb
 
 from conf_ts.dirs_config import db_path
-from tools.db import get_completed_dates
+from src_ts.db import get_completed_dates
 
 def get_namechange_start_date() -> str:
     """
