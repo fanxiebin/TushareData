@@ -19,5 +19,7 @@ db_path = data_root / 'tushare.duckdb'
 dirs = {
     'extr_status': data_root / '1_extracted_status',
     'processed': data_root / '2_processed',
+    'features': data_root / '3_features',
+    'response': data_root / '4_response',
     'backup': data_root / 'SS',
 }

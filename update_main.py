@@ -2,6 +2,9 @@ from src_ts.TS_Downloader_data import download_data
 from src_ts.TS_Downloader_status import download_stock_list
 from src_ts.TS_Derive_status import derive_status
 from src_ts.TS_Derive_processed import derive_processed
+from src_ts.TS_Derive_market import derive_market
+from src_ts.TS_Derive_features import derive_features
+from src_ts.TS_Derive_response import derive_response
 from src_ts.db import connect, backup_database
 from conf_ts.logger_config import get_logger
 from conf_ts.dirs_config import dirs, db_path
@@ -11,7 +14,7 @@ logger = get_logger(__name__)
 
 #%% --- 备份数据库（需在建立连接前完成文件拷贝） ---
 logger.info("开始备份数据库...")
-backup_database(db_path, dirs['backup'])
+# backup_database(db_path, dirs['backup'])
 
 con = connect(db_path)
 try:
@@ -33,6 +36,18 @@ try:
     #* 二、价格前复权与停牌填充，产出下游直接可用的数据（原PyQI侧TS_Processer_data迁移至此）
     logger.info("开始衍生处理后的数据...")
     derive_processed(con, dirs['processed'])
+
+    #* 三、日频离散涨跌幅、板块与指数（库内长表）
+    logger.info("开始衍生离散涨跌幅与市场指数...")
+    derive_market(con, dirs['features'])
+
+    #* 四、趋势特征（1/3 日实际变化；10/30/90 日对数价格 OLS，80% 成交日）
+    logger.info("开始衍生趋势特征...")
+    derive_features(dirs['processed'], dirs['features'])
+
+    #* 五、未来收益响应（3/10/30 日；10/30 日出口价为中心均价）
+    logger.info("开始衍生未来收益响应...")
+    derive_response(dirs['processed'], dirs['extr_status'], dirs['response'])
 finally:
     con.close()
 

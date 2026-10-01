@@ -1,8 +1,8 @@
 """ 衍生层：基于DuckDB原始表生成ST/涨跌停/市值分层状态宽表与状态码表
 
 与提取层同构（SQL计算+PIVOT+COPY直出parquet），替代原PyQI侧TS_Extract_status.py的pandas后处理：
-- ST状态：上市日/更名公告日/退市日构成事件流，ASOF JOIN取各交易日最近事件（退市优先于更名），
-  收盘价<1元的非退市覆盖为*ST
+- ST状态：上市日/更名公告日/退市日构成事件流，ASOF JOIN取各交易日最近事件（实际退市优先于更名），
+  名称带“退”为退市整理；收盘价<1元的股票覆盖为*ST，但保留退市整理/退市状态
 - 涨跌停：收盘/开盘/最低(高)价与涨跌停价的比较经CASE优先级树判定，LAG判定次日打开
 - 市值分层：流通市值逐日横截面分位数（PERCENT_RANK原生窗口），与旧pandas rank/count口径
   仅在贴阈值约±1/n的极窄带内可能有每日1~2只股票的档位差，属已接受的迁移偏差
@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 _GRID_SQL = """
 CREATE OR REPLACE TEMP VIEW grid AS
 SELECT c.trade_date, s.ts_code,
-       d.open, d.high, d.low, d.close, d.amount,
+       d.open, d.high, d.low, d.close, d.pct_chg, d.amount,
        CASE WHEN d.ts_code IS NOT NULL THEN a.adj_factor END AS adj_factor,
        CASE WHEN d.ts_code IS NOT NULL THEN l.up_limit END AS up_limit,
        CASE WHEN d.ts_code IS NOT NULL THEN l.down_limit END AS down_limit,
@@ -43,7 +43,7 @@ LEFT JOIN daily_basic b ON b.ts_code = s.ts_code AND b.trade_date = c.trade_date
 _ST_VIEWS_SQL = f"""
 CREATE OR REPLACE TEMP VIEW nc_events AS
 SELECT ts_code, ann_date,
-       CASE WHEN starts_with(n, '退') OR ends_with(n, '退') THEN '{ST_CODES['退市']}'
+       CASE WHEN starts_with(n, '退') OR ends_with(n, '退') THEN '{ST_CODES['退市整理']}'
             WHEN starts_with(n, '*ST') THEN '{ST_CODES['*ST']}'
             WHEN starts_with(n, 'ST') THEN '{ST_CODES['ST']}'
             ELSE '{ST_CODES['正常']}'
@@ -62,7 +62,8 @@ LEFT JOIN (SELECT ts_code, min(trade_date) AS first_date FROM daily
 
 CREATE OR REPLACE TEMP VIEW st_status AS
 SELECT trade_date, ts_code,
-       CASE WHEN close IS NOT NULL AND close < 1.0 AND base <> '{ST_CODES['退市']}'
+       CASE WHEN close IS NOT NULL AND close < 1.0
+                 AND base NOT IN ('{ST_CODES['退市整理']}', '{ST_CODES['退市']}')
             THEN '{ST_CODES['*ST']}' ELSE base END AS st
 FROM (
     SELECT g.trade_date, g.ts_code, g.close,

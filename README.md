@@ -5,7 +5,7 @@
 ## 功能特点
 
 - **增量更新**：按交易日逐日下载，数据与下载状态同事务写入 DuckDB，中断重跑不会产生半日数据或重复下载
-- **纯 SQL 衍生层**：ST/涨跌停/市值分层状态、前复权、停牌填充全部在 DuckDB 内用 SQL 完成，无 pandas 中间步骤
+- **衍生层**：状态、前复权、离散涨跌幅与指数在 DuckDB 内完成；趋势与未来收益在宽表上用 pandas 计算
 - **下游零处理**：直接读 Parquet 宽表（行=交易日，列=股票代码），pandas / DuckDB / Polars 均可一行读入
 
 ## 环境要求
@@ -45,8 +45,10 @@ Windows 下如需双击运行，可自行在仓库根目录创建 `.bat` 启动�
 | 位置 | 内容 |
 |---|---|
 | `data/tushare.duckdb` | 原始数据库：各下载表 + 下载状态表 |
-| `data/1_extracted_status/` | 状态宽表：`ST.parquet`（未上市/正常/ST/*ST/退市）、`limit.parquet`（涨跌停分级）、`cap.parquet`（市值分层）、`status_codes.parquet`（状态码表，附交易视角的可买入标注） |
-| `data/2_processed/` | 前复权宽表：`close.parquet`（前复权收盘价）及 `amount` / `circ_mv` / `turnover_rate_f`，停牌期数值向前填充 |
+| `data/1_extracted_status/` | 状态宽表：`ST.parquet`（未上市/正常/ST/*ST/退市整理/退市；整理期码 `5`，实际退市码 `6`）、`limit.parquet`（涨跌停分级）、`cap.parquet`（市值分层）、`status_codes.parquet`（状态码表，附交易视角的可买入标注） |
+| `data/2_processed/` | `close.parquet` 前复权、停牌为空；`amount` / `circ_mv` / `turnover_rate_f` 按原值透出，停牌为空 |
+| `data/3_features/` | 趋势宽表 `TR_1` / `TR_3`（两端实际变化）与 `TR_10` / `TR_30` / `TR_90`（log 价格 OLS 拟合总收益，窗口内 ≥80% 成交日）；离散涨跌幅 `close_ROC_1_disc.parquet`；`market/` 下 `000001.SH`、`399006.SZ` 与 `board.parquet` |
+| `data/4_response/` | 未来收益响应宽表 `RR_3.parquet` / `RR_10.parquet` / `RR_30.parquet`：`CMA_w(close)_{t+h} / close_t - 1`（简单收益率）。窗口 3 日 w=1、10 日 w=3、30 日 w=9；退市整理期保留前复权收盘，实际退市后记 0；持有期内实际退市的收益强制为 `-1`，买入日已退市或缺价为 NULL |
 | `data/SS/` | 每次运行前自动备份的数据库文件 |
 
 下游程序需要同时读取 DuckDB 时，请使用只读连接：`duckdb.connect('data/tushare.duckdb', read_only=True)`（DuckDB 单文件同一时刻只允许一个写者）。
