@@ -1,0 +1,16 @@
+# 文本文件在仓库和检出时都使用 LF，避免 Windows 的 CRLF 被当成内容修改。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换。
+*.duckdb binary
+*.parquet binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.whl binary
